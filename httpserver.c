@@ -6,9 +6,9 @@
 #include <string.h>
 #include <unistd.h>
 #define LENGTH_MAX_NUMBER_DIGIT 15
-#define PORT 1080
+#define PORT 3000
 char* request_start_line="HTTP/1.1 200 OK\r\n";
-char* request_headers="Server : Httpserver.c\r\nContent-Type: text/html\r\nContent-Length : ";
+char* request_headers="Server : Httpserver.c\r\nContent-Type:text/html\r\nConnection:close\r\nContent-Length:";
 char* request_marker_body="\r\n\r\n";
 
 char* read_file(char* name_file,size_t* size_ptr){
@@ -46,6 +46,11 @@ int main(){
         perror("Socket creation error");
         exit(EXIT_FAILURE);
     }
+    int opt=1;
+    if(setsockopt(serverfd,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt))<0){
+        perror("Setsockopt server error");
+        exit(EXIT_FAILURE);
+    }
     struct sockaddr_in adress;
     adress.sin_family=AF_INET;
     adress.sin_addr.s_addr=INADDR_ANY;
@@ -75,7 +80,7 @@ int main(){
         if(content==NULL) goto close_client;
         len_str_size=snprintf(size_str,LENGTH_MAX_NUMBER_DIGIT+1,"%lu",size);
         if(len_str_size>LENGTH_MAX_NUMBER_DIGIT){
-            fprintf(stderr,"length file too large for LENGTH_MAX_NUMBER_DIGIT");
+            fprintf(stderr,"length file too large for LENGTH_MAX_NUMBER_DIGIT\n");
             exit(EXIT_FAILURE);
         }
         if(send_data(clientfd,request_start_line,strlen(request_start_line))<0) goto free_client;
