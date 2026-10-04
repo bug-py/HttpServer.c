@@ -1,5 +1,5 @@
 FLAGS = -Werror -Wall -Wextra
-FILE = httpserver
+
 
 all: $(FILE).exe
 	./$(FILE).exe
