@@ -29,7 +29,7 @@ $(foreach src,$(SRCS),$(eval $(call COMPILE_RULES , $(subst $(PATH_SRC)/,$(PATH_
 $(LIB) : $(OBJS)
 	ar -crs $@ $^
 	
-$(PATH_BIN)/%.exe : $(PATH_TEST)/%.c
+$(PATH_BIN)/%.exe : $(PATH_TEST)/%.c $(LIB)
 	gcc $(FLAGS) -I$(PATH_HEADER)  $<  -L$(LIB_PATH) -l$(LIB_NAME) -o $@
 
 test  : $(BINS)
