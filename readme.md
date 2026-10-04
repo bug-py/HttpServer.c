@@ -1,6 +1,6 @@
 #  BASIC HTTP SERVER v0.9
 # GOALS
-- [ ] Project directory structure 
+- [x] Project directory structure 
 - [ ] Parser that supports the GET method and the URLs
 - [ ] Socket multiplexing system
 - [ ] HTTP service that exposes a directory
