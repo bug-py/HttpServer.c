@@ -18,7 +18,7 @@ OBJS =$(subst $(PATH_SRC)/,$(PATH_OBJ)/,$(SRCS:.c=.o))
 
 define COMPILE_RULES
 $(1) : $(2) $(3)
-	gcc $(FLAGS) -I$(PATH_HEADER)  -c $$< -o $$@
+	gcc $(FLAGS) -I$(PATH_HEADER) -c $$< -o $$@
 endef
 
 .PHONY : all clean test
@@ -30,7 +30,7 @@ $(LIB) : $(OBJS)
 	ar -crs $@ $^
 	
 $(PATH_BIN)/%.exe : $(PATH_TEST)/%.c $(LIB)
-	gcc $(FLAGS) -I$(PATH_HEADER)  $<  -L$(LIB_PATH) -l$(LIB_NAME) -o $@
+	gcc $(FLAGS) -I$(PATH_HEADER) $< -L$(LIB_PATH) -l$(LIB_NAME) -o $@
 
 test  : $(BINS)
 

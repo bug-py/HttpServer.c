@@ -22,6 +22,9 @@ int BUFFER_append(buffer_t* buffer,void* stream,size_t len){
     return 0;
     
 }
+void BUFFER_clear(buffer_t* buffer){
+    buffer->length=0;
+}
 void BUFFER_free(buffer_t* buffer){
     free(buffer->data);
 }
