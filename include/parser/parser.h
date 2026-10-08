@@ -26,4 +26,7 @@ typedef struct{
 }parser_context_t;
 void PARSER_init(parser_context_t* ctx,size_t max_length);
 parser_result_t PARSER_feed(parser_context_t* ctx,char* stream,size_t len);
+http_request_t* PARSER_get_request(parser_context_t* ctx);
+void PARSER_reset(parser_context_t* ctx);
+void PARSER_free(parser_context_t* ctx);
 #endif

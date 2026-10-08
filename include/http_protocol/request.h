@@ -14,4 +14,5 @@ typedef struct {
 const char* method_to_str(method_t method);
 void REQUEST_init(http_request_t* request);
 void REQUEST_free_all(http_request_t* request);
+void REQUEST_destroy(http_request_t* request);
 #endif

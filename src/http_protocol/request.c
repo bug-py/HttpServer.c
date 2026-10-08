@@ -10,6 +10,14 @@ void REQUEST_init(http_request_t* request){
     request->method=METHOD_INVALID;
     request->url=NULL;
 }
+
 void REQUEST_free_all(http_request_t* request){
     if(request->url) free(request->url);
+}
+void REQUEST_destroy(http_request_t* request){
+    if(request!=NULL){
+        REQUEST_free_all(request);
+        free(request);
+    }
+   
 }

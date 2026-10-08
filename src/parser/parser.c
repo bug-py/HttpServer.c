@@ -122,3 +122,24 @@ parser_result_t PARSER_feed(parser_context_t* ctx,char* stream,size_t len){
         ctx->state=CTX_PARSING_ERR;
         return PARSING_ERR;  
 }
+http_request_t* PARSER_get_request(parser_context_t* ctx){
+    if(ctx->state==CTX_PARSING_FINISH){
+        http_request_t* request=ctx->request;
+        ctx->request=NULL;
+        return request;
+    }
+    return NULL;
+
+}
+void PARSER_reset(parser_context_t* ctx){
+    REQUEST_destroy(ctx->request);
+    ctx->request=xalloc(sizeof(http_request_t),1,NULL);
+    REQUEST_init(ctx->request);
+    ctx->bytes_processed=0;
+    ctx->state=CTX_PARSING_START_LINE;
+    BUFFER_clear(&(ctx->buffer));
+}
+void PARSER_free(parser_context_t* ctx){
+    REQUEST_destroy(ctx->request);
+    BUFFER_free(&(ctx->buffer));
+}
