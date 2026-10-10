@@ -11,7 +11,7 @@ void BUFFER_init(buffer_t* buffer,size_t init_capacity,size_t max_length){
 }
 int BUFFER_append(buffer_t* buffer,void* stream,size_t len){
     size_t new_length=buffer->length+len;
-    if(new_length>buffer->max_length) return -1;
+    if(buffer->max_length>0 && new_length>buffer->max_length) return -1;
     if(new_length>buffer->capacity){
         size_t new_capacity=new_length*2;
         buffer->capacity=new_capacity;
@@ -21,6 +21,9 @@ int BUFFER_append(buffer_t* buffer,void* stream,size_t len){
     buffer->length=new_length;
     return 0;
     
+}
+int BUFFER_append_str(buffer_t* buffer,char* str){
+    return BUFFER_append(buffer,str,strlen(str));
 }
 void BUFFER_clear(buffer_t* buffer){
     buffer->length=0;

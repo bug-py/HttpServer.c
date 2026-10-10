@@ -2,10 +2,8 @@
 #include "http_protocol/http.h"
 #include <stdio.h>
 #include <stdlib.h>
-int is_valid_status_code(status_code_t status_code){
-    return status_code>=100 && status_code<=599;
-}
-const char* status_code_to_str(status_code_t status_code){
+#define LEN_STR_STATUS_CODE (STATUS_CODE_DIGIT+3)
+char* status_code_to_str(status_code_t status_code){
     switch(status_code){
         case 200: return "OK";
         case 404: return "Not Found";
@@ -26,12 +24,56 @@ void RESPONSE_init(http_response_t* response){
     response->content_type=NULL;
     response->content=NULL;
 }
+int is_valid_status_code(status_code_t status_code){
+    return status_code>=100 && status_code<=599;
+}
+
 int RESPONSE_build(http_response_t* response,buffer_t* buffer){
+    // version HTTP
+    if(BUFFER_append_str(buffer,HTTP_VERSION)<0) return -1;
+
+    // status code and 2 spaces   ex : " 200 "
+    char str_status_code[LEN_STR_STATUS_CODE];
     if(!is_valid_status_code(response->status_code)) return -1;
-    if(response->content_length>0 && response->content==NULL) return -1;
-    if(BUFFER_append(buffer,HTTP_VERSION,HTTP_VERSION_LEN)<0) return -1;
-    char status_code_and_spaces[HTTP_VERSION_LEN+2];
-    snprintf(status_code_and_spaces,HTTP_VERSION_LEN+2," %i ",response->status_code);
+    int ret=snprintf(str_status_code,LEN_STR_STATUS_CODE ," %i ",response->status_code);
+    if(ret+1!=LEN_STR_STATUS_CODE) return -1;
+    if(BUFFER_append_str(buffer,str_status_code)<0) return -1;
+
+    // reason phrase
+    char* reason_phrase=response->reason_phrase ? response->reason_phrase: status_code_to_str(response->status_code);
+    if(BUFFER_append_str(buffer,reason_phrase)<0) return -1;
+
+    // CRLF
+    if(BUFFER_append_str(buffer,HTTP_CRLF)<0) return -1;
+
+
+    // Content-Length header
+    if(response->content_length>0){
+        if(BUFFER_append_str(buffer,"Content-Length:")<0) return -1;
+        // Number size_t => str
+        char str_content_length[LEN_STR_MAX_LENGTH];
+        int len_write=snprintf(str_content_length,LEN_STR_MAX_LENGTH,"%lu",response->content_length);
+        if(len_write<0 || len_write+1>LEN_STR_MAX_LENGTH) return -1;
+        if(BUFFER_append_str(buffer,str_content_length)<0) return -1;
+        // CRLF
+        if(BUFFER_append_str(buffer,HTTP_CRLF)<0) return -1;
+    }
+    // Content-Type header
+    if(response->content_type){
+        if(BUFFER_append_str(buffer,"Content-Type:")<0) return -1;
+        if(BUFFER_append_str(buffer,response->content_type)) return -1;
+        // CRLF
+        if(BUFFER_append_str(buffer,HTTP_CRLF)<0) return -1;
+    }
+
+    // CRLF
+    if(BUFFER_append_str(buffer,HTTP_CRLF)<0) return -1;
+
+    // Content
+    if(response->content_length>0){
+        if(response->content==NULL) return -1;
+        if(BUFFER_append(buffer,response->content,response->content_length)<0) return -1;
+    }
     return 0;
     
 }

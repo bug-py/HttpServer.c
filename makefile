@@ -1,4 +1,4 @@
-FLAGS = -Werror -Wall -Wextra
+FLAGS = -Werror -Wall -Wextra -g
 
 PATH_SRC=src
 PATH_HEADER=include

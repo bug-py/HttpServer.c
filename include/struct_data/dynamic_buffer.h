@@ -9,6 +9,7 @@ typedef struct{
 }buffer_t;
 void BUFFER_init(buffer_t* buffer,size_t init_capacity,size_t max_length);
 int BUFFER_append(buffer_t* buffer,void* stream,size_t len);
+int BUFFER_append_str(buffer_t* buffer,char* str);
 void BUFFER_clear(buffer_t* buffer);
 void BUFFER_free(buffer_t* buffer);
 #endif

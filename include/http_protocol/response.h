@@ -14,7 +14,7 @@ typedef struct {
     char* content;
 }http_response_t;
 
-const char* status_code_to_str(status_code_t status_code);
+char* status_code_to_str(status_code_t status_code);
 void RESPONSE_init(http_response_t* response);
 int RESPONSE_build(http_response_t* response,buffer_t* buffer);
 void RESPONSE_free_all(http_response_t* response);
