@@ -2,6 +2,6 @@
 # GOALS
 - [x] Project directory structure 
 - [x] Parser that supports the GET method and the URLs
-- [ ] HTTP response generator that supports content-length and content-type
+- [x] HTTP response generator that supports content-length and content-type
 - [ ] Socket multiplexing system
 - [ ] HTTP service that exposes a directory
