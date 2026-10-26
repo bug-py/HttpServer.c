@@ -3,5 +3,5 @@
 - [x] Project directory structure 
 - [x] Parser that supports the GET method and the URLs
 - [x] HTTP response generator that supports content-length and content-type
-- [ ] Socket multiplexing system
+- [ ] Blocking socket with multithreading
 - [ ] HTTP service that exposes a directory

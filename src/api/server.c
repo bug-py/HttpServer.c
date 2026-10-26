@@ -15,7 +15,13 @@
 // IP => inet_pton() inet_ntop()  INET_ADDRSTRLEN
 #include <arpa/inet.h>
 
-create_server_result_t CreateServer(char* interface_ip,in_port_t port,int backlog){
+typedef enum{
+    CREATE_SERVER_SYS_ERR=-2,
+    CREATE_SERVER_IP_ERR=-1,
+}create_server_result_t;
+
+// return serverfd or error enum
+create_server_result_t HTTP_SERVER_Create(char* interface_ip,in_port_t port,int backlog){
     // TCP & IPV4
     int serverfd=socket(AF_INET,SOCK_STREAM,0);
     if(serverfd<0) return CREATE_SERVER_SYS_ERR;
@@ -39,10 +45,33 @@ create_server_result_t CreateServer(char* interface_ip,in_port_t port,int backlo
     if(listen(serverfd,backlog)<0) goto err_sys;
 
     return serverfd;
+    // handle err
     err_sys:
         close(serverfd);
         return CREATE_SERVER_SYS_ERR;
     err_ip:
         close(serverfd);
         return CREATE_SERVER_IP_ERR;
+}
+http_server_state_t HTTP_SERVER_loop(char* interface_ip,in_port_t port,int backlog,handle_http_t callback){
+    // get serverfd handle err
+    callback=callback; // for -Werror flag
+    int serverfd=HTTP_SERVER_Create(interface_ip,port,backlog);
+    switch(serverfd){
+        case CREATE_SERVER_SYS_ERR: return SERVER_SYS_ERR;
+        case CREATE_SERVER_IP_ERR: return  SERVER_IP_ERR;
+        default : break;
+    }
+    // accept client
+    struct sockaddr_in addr_client;
+    socklen_t len_addr=sizeof(addr_client);
+    int clientfd=accept(serverfd,(struct sockaddr*)&addr_client,&len_addr);
+    if(clientfd<0) goto err_sys;
+
+
+    // handle err
+    err_sys:
+        close(serverfd);
+        return SERVER_SYS_ERR;
+    return 0;
 }
