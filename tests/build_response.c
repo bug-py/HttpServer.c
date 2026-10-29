@@ -6,7 +6,7 @@ int main(){
     RESPONSE_init(&response);
     response.status_code=200;
     response.reason_phrase="CUSTOM";
-    response.content_type="test/html";
+    response.content_type="text/html";
     response.content="<h1>HELLO</h1>";
     response.content_length=strlen(response.content);
     buffer_t buffer;
