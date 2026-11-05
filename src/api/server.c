@@ -22,7 +22,6 @@
 #include <pthread.h>
 
 #define LEN_BUFFER_READ 1024
-#define LEN_BUFFER_SEND 1024
 
 
 typedef enum{
@@ -71,6 +70,25 @@ create_server_result_t HTTP_SERVER_Create(char* interface_ip,in_port_t port,int 
         close(serverfd);
         return CREATE_SERVER_IP_ERR;
 }
+int send_response(int clientfd,http_response_t* response){
+    buffer_t buffer;
+    BUFFER_init(&buffer,1024,MAX_LENGTH_RESPONSE);
+    if (RESPONSE_build(response,&buffer)<0) goto clean;
+    size_t total_bytes_send=0; 
+    for(;;){
+        ssize_t bytes_send=write(clientfd,buffer.data+total_bytes_send,buffer.length-total_bytes_send);
+        if(bytes_send<=0) goto clean;
+        total_bytes_send+=bytes_send;
+        if(total_bytes_send==buffer.length){
+            BUFFER_free(&buffer);
+            return 0;
+        }
+       
+    }
+    clean:
+        BUFFER_free(&buffer);
+        return -1;
+}
 http_request_t* recv_request(int clientfd){
     parser_context_t ctx;
     PARSER_init(&ctx,MAX_LENGTH_REQUEST);
@@ -78,15 +96,12 @@ http_request_t* recv_request(int clientfd){
     for(;;){
        ssize_t bytes_read=read(clientfd,buffer,LEN_BUFFER_READ);
        if(bytes_read<=0) goto clean;
-
         switch(PARSER_feed(&ctx,buffer,bytes_read)){
+            case PARSING_NEED_MORE_DATA: break;
             case PARSING_SUCCES: 
                 http_request_t* request=PARSER_get_request(&ctx);
                 PARSER_free(&ctx);
                 return request;
-
-            case PARSING_NEED_MORE_DATA: break;
-
             case PARSING_ERR:
             case PARSING_OVERFLOW:    
             default:
@@ -100,9 +115,22 @@ http_request_t* recv_request(int clientfd){
 }
 void* handle_client_worker(void* arg){
     client_t* client=(client_t*)arg;
-    printf("%s:%i\n",client->ip,client->port);
-    goto clean;
+    http_request_t* request;
+    http_response_t* response;
+    for(;;){
+        request=NULL;
+        response=NULL;
+        request=recv_request(client->fd);
+        if(request==NULL) goto clean;
+        response=client->callback(client->ip,client->port,request);
+        if(response==NULL) goto clean;
+        if(send_response(client->fd,response)<0) goto clean;
+        RESPONSE_destroy(response);
+        REQUEST_destroy(request);
+    }
     clean:
+        RESPONSE_destroy(response);
+        REQUEST_destroy(request);
         close(client->fd);
         free(client);
         return NULL;
@@ -133,6 +161,7 @@ http_server_state_t HTTP_SERVER_loop(char* interface_ip,in_port_t port,int backl
         pthread_t thread;
         if(pthread_create(&thread,NULL,&handle_client_worker,client)<0) goto err_sys;
         pthread_detach(thread);
+        
     }
     // never reach 
     return 0;

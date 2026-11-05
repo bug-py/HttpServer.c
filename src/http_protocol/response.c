@@ -48,16 +48,15 @@ int RESPONSE_build(http_response_t* response,buffer_t* buffer){
 
 
     // Content-Length header
-    if(response->content_length>0){
-        if(BUFFER_append_str(buffer,"Content-Length:")<0) return -1;
-        // Number size_t => str
-        char str_content_length[LEN_STR_MAX_LENGTH];
-        int len_write=snprintf(str_content_length,LEN_STR_MAX_LENGTH,"%lu",response->content_length);
-        if(len_write<0 || len_write+1>LEN_STR_MAX_LENGTH) return -1;
-        if(BUFFER_append_str(buffer,str_content_length)<0) return -1;
-        // CRLF
-        if(BUFFER_append_str(buffer,HTTP_CRLF)<0) return -1;
-    }
+    if(BUFFER_append_str(buffer,"Content-Length:")<0) return -1;
+    // Number size_t => str
+    char str_content_length[LEN_STR_MAX_LENGTH];
+    int len_write=snprintf(str_content_length,LEN_STR_MAX_LENGTH,"%lu",response->content_length);
+    if(len_write<0 || len_write+1>LEN_STR_MAX_LENGTH) return -1;
+    if(BUFFER_append_str(buffer,str_content_length)<0) return -1;
+    // CRLF
+    if(BUFFER_append_str(buffer,HTTP_CRLF)<0) return -1;
+    
     // Content-Type header
     if(response->content_type){
         if(BUFFER_append_str(buffer,"Content-Type:")<0) return -1;
