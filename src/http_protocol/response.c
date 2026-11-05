@@ -1,5 +1,6 @@
 #include "http_protocol/response.h"
 #include "http_protocol/http.h"
+#include "struct_data/safe_alloc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #define LEN_STR_STATUS_CODE (STATUS_CODE_DIGIT+3)
@@ -16,6 +17,11 @@ char* status_code_to_str(status_code_t status_code){
     if(status_code>=500 && status_code<=599) return "Server Error";
     // Not standard
     return NULL;
+}
+http_response_t* RESPONSE_create(void){
+    http_response_t* response=xalloc(sizeof(http_response_t),1,NULL);
+    RESPONSE_init(response);
+    return response;
 }
 void RESPONSE_init(http_response_t* response){
     response->status_code=-1;

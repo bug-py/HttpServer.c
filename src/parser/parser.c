@@ -8,8 +8,7 @@
 void PARSER_init(parser_context_t* ctx,size_t max_length){
     ctx->bytes_processed=0;
     ctx->state=CTX_PARSING_START_LINE;
-    ctx->request=xalloc(sizeof(http_request_t),1,NULL);
-    REQUEST_init(ctx->request);
+    ctx->request=REQUEST_create();
     BUFFER_init(&(ctx->buffer),INIT_CAPACITY_BUFFER,max_length);
 }
 char* find_char(char* current,size_t len,char character){
