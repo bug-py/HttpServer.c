@@ -96,7 +96,7 @@ parser_result_t PARSER_feed(parser_context_t* ctx,char* stream,size_t len){
     }
     if(ctx->state==CTX_PARSING_HEADERS){
         // loop for catch each header in the buffer
-        while(1){
+        for(;;){
             char* start_header=ctx->buffer.data+ctx->bytes_processed;
             char* CRLF=search_CRLF(start_header,ctx->buffer.length-ctx->bytes_processed);
             if(CRLF==NULL) return PARSING_NEED_MORE_DATA;
