@@ -6,8 +6,8 @@
 //  sockaddr_in  in_port_t INADDR_ANY
 #include <netinet/in.h>
 
-#define MAX_LENGTH_REQUEST 16384
-#define MAX_LENGTH_RESPONSE 16384
+#define MAX_LENGTH_REQUEST 1048576
+#define MAX_LENGTH_RESPONSE 1048576
 
 typedef enum{
     SERVER_IP_ERR=-2,

@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "api/server.h"
 #include "struct_data/safe_alloc.h"
 
 #define IP "127.0.0.1"
 #define PORT 3000
+#define DIR_STATIC "static"
+#define ROOT_PATH_FILE "/index.html"
 char* read_file(char* path,size_t* ptr_len){
     FILE* file=fopen(path,"rb");
     char* content=NULL;
@@ -30,22 +33,56 @@ char* read_file(char* path,size_t* ptr_len){
         return NULL;  
    
 }
+char* ext_to_MIME(char* file_path){
+    char* ext=strrchr(file_path,'.');
+    if(ext==NULL) return "text/plain";
+    if(strcmp(ext,".html")==0) return "text/html";
+    if(strcmp(ext,".css")==0) return "text/css";
+    if(strcmp(ext,".js")==0) return "text/javascript";
+    if(strcmp(ext,".png")==0) return "image/png";
+    if(strcmp(ext,".jpeg")==0) return "image/jpeg";
+    if(strcmp(ext,".jpg")==0) return "image/jpg";
+    if(strcmp(ext,".webp")==0) return "image/webp";
+    if(strcmp(ext,".ttf")==0) return "font/ttf";
+    
+    return "text/plain";
+}
+char* strjoin(char* first,char* second){
+    char* result=xalloc(sizeof(char),strlen(first)+strlen(second)+1,NULL);
+    strcpy(result,first);
+    strcat(result,second);
+    return result;
+}
 http_response_t* directory_mapping(char* ip,in_port_t port,http_request_t* req){
-    (void) ip;(void)port;(void)req;
+  
+    char* path= strcmp(req->url,"/")==0 ? strjoin(DIR_STATIC,ROOT_PATH_FILE) :strjoin(DIR_STATIC,req->url);
+    size_t len;
+    char* content=read_file(path,&len);
+    printf("%s:%i  => %s \n",ip,port,path);
     http_response_t* res=RESPONSE_create();
-    res->status_code=200;
+    if(content==NULL){
+        char* error=strjoin("404 not found : ",req->url);
+        res->status_code=404;
+        res->content=error;
+        res->content_length=strlen(error);
+        res->content_type=strdup("text/plain");
+        free(content);
+    }else{
+       
+        res->status_code=200;
+        res->content=content;
+        res->content_length=len;
+        res->content_type=strdup(ext_to_MIME(path));
+        
+    }
+    
+    free(path);
+    
     return res;
 
 }
 
 int main(){
-    size_t len;
-    char* file=read_file("static/index.html",&len);
-    printf("%p\n",file);
-    for(size_t i=0;i<len;i++){
-        putchar(file[i]);
-    }
-    putchar('\n');
     printf("http://%s:%i\n",IP,PORT);
     switch(HTTP_SERVER_loop(IP,PORT,10,&directory_mapping)){
         case SERVER_SYS_ERR:
