@@ -36,7 +36,7 @@ http_server_state_t HTTP_SERVER_loop(char* interface_ip,in_port_t port,int backl
 #### It allows you to launch an HTTP server that runs indefinitely. 
 #### It only returns a value in the event of an error.
 
-#### *Arguments*
+#### *ARGUMENTS*
 - #### *interface_ip*
 #### This is the IPv4 address of the interface on which the server is listening.
 - #### *port*
@@ -57,7 +57,16 @@ http_response_t* handle(char* ip,in_port_t port,http_request_t* request);
 #### Each attribute of the response must be allocated on the heap or marked as null. 
 #### You can use [RESPONSE_create()](/include/http_protocol/response.h).
 
-#### This server uses threads for each client; be careful with the race conditions! 
+#### This server uses threads for each client
+#### be careful with the race conditions! 
+
+#### *RETURN VALUE*
+#### This function returns a value from the [http_server_state_t enum](/include/api/server.h) only in the event of an error.
+- ####  *SERVER_SYS_ERR*
+#### A system error has occurred
+#### The error is stored in errno.
+- ####  *SERVER_IP_ERR*
+#### The IP address provided for the interface is invalid.
 
 ## v0.9 
 - [x] Project directory structure 
