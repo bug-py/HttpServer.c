@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include "struct_data/dynamic_buffer.h"
 #define STATUS_CODE_DIGIT 3
+#define CONTENT_LENGTH_STR_MAX 10
 typedef int status_code_t;
 
 typedef struct {

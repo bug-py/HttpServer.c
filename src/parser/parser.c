@@ -1,16 +1,25 @@
 #include "parser/parser.h"
 #include "http_protocol/http.h"
 #include "struct_data/safe_alloc.h"
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #define INIT_CAPACITY_BUFFER 1024
+parser_context_t* PARSER_create(size_t max_length){
+    parser_context_t* ctx=xalloc(sizeof(parser_context_t),1,NULL);
+    PARSER_init(ctx,max_length);
+    return ctx;
+}
 void PARSER_init(parser_context_t* ctx,size_t max_length){
     ctx->bytes_processed=0;
     ctx->state=CTX_PARSING_START_LINE;
     ctx->request=REQUEST_create();
     BUFFER_init(&(ctx->buffer),INIT_CAPACITY_BUFFER,max_length);
 }
+
+// utils for string parsing
+
 char* find_char(char* current,size_t len,char character){
     for(size_t i=0;i<len;i++){
         if(current[i]==character) return &(current[i]);
@@ -28,7 +37,8 @@ bool startwith(const char* current,size_t len_current,const char* cmp,size_t len
     for (size_t i=0;i<len_cmp;i++){
         if(current[i] != cmp[i])  return false;
     }
-    *next=(char*)(uintptr_t)current+(uintptr_t)len_cmp;
+    // forward ptr and decrease len for continue parsing
+    *next=(char*)current+len_cmp;
     *remaining_len=len_current-len_cmp;
     return true;
 }
@@ -46,11 +56,13 @@ char* extract_url(char* current,size_t len,char** next,size_t* remaining_len){
     char* url=xalloc(sizeof(char),len_url+1,NULL);
     memcpy(url,current,len_url);
     url[len_url]='\0';
+    // forward ptr and decrease len for continue parsing
     *remaining_len=len-len_url;
     *next=space;
     return url;
-    
 }
+
+
 parser_result_t PARSER_feed(parser_context_t* ctx,char* stream,size_t len){
    
     if(BUFFER_append(&(ctx->buffer),stream,len)<0){
@@ -132,8 +144,7 @@ http_request_t* PARSER_get_request(parser_context_t* ctx){
 }
 void PARSER_reset(parser_context_t* ctx){
     REQUEST_destroy(ctx->request);
-    ctx->request=xalloc(sizeof(http_request_t),1,NULL);
-    REQUEST_init(ctx->request);
+    ctx->request=REQUEST_create();
     ctx->bytes_processed=0;
     ctx->state=CTX_PARSING_START_LINE;
     BUFFER_clear(&(ctx->buffer));
@@ -141,4 +152,10 @@ void PARSER_reset(parser_context_t* ctx){
 void PARSER_free(parser_context_t* ctx){
     REQUEST_destroy(ctx->request);
     BUFFER_free(&(ctx->buffer));
+}
+void PARSER_destroy(parser_context_t* ctx){
+    if(ctx!=NULL){
+        PARSER_free(ctx);
+        free(ctx);
+    }
 }

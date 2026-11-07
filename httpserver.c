@@ -6,19 +6,20 @@
 
 #define IP "127.0.0.1"
 #define PORT 3000
+
 #define DIR_STATIC "static"
 #define ROOT_PATH_FILE "/index.html"
+
 char* read_file(char* path,size_t* ptr_len){
     FILE* file=fopen(path,"rb");
     char* content=NULL;
     if(file==NULL) return NULL;
-
+    // get length file
     if(fseek(file,0,SEEK_END)<0) goto clean;
     off_t len=ftello(file);
     if(len<0) goto clean;
-
     rewind(file);
-
+    // read all file
     content=xalloc(sizeof(char),(size_t)len,NULL);
     size_t bloc=fread(content,(size_t)len,1,file);
     if (bloc!=1) goto clean;
@@ -54,13 +55,14 @@ char* strjoin(char* first,char* second){
     return result;
 }
 http_response_t* directory_mapping(char* ip,in_port_t port,http_request_t* req){
-  
+    // if the path is /, serve the default file
     char* path= strcmp(req->url,"/")==0 ? strjoin(DIR_STATIC,ROOT_PATH_FILE) :strjoin(DIR_STATIC,req->url);
     size_t len;
     char* content=read_file(path,&len);
     printf("%s:%i  => %s \n",ip,port,path);
     http_response_t* res=RESPONSE_create();
     if(content==NULL){
+        // file not found 
         char* error=strjoin("404 not found : ",req->url);
         res->status_code=404;
         res->content=error;
@@ -68,18 +70,14 @@ http_response_t* directory_mapping(char* ip,in_port_t port,http_request_t* req){
         res->content_type=strdup("text/plain");
         free(content);
     }else{
-       
+        // file found
         res->status_code=200;
         res->content=content;
         res->content_length=len;
         res->content_type=strdup(ext_to_MIME(path));
-        
     }
-    
     free(path);
-    
     return res;
-
 }
 
 int main(){
