@@ -1,97 +1,94 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <errno.h>
 #include <string.h>
-#include <unistd.h>
-#define LENGTH_MAX_NUMBER_DIGIT 15
+#include "api/server.h"
+#include "struct_data/safe_alloc.h"
+
+#define IP "127.0.0.1"
 #define PORT 3000
-char* request_start_line="HTTP/1.1 200 OK\r\n";
-char* request_headers="Server : Httpserver.c\r\nContent-Type:text/html\r\nConnection:close\r\nContent-Length:";
-char* request_marker_body="\r\n\r\n";
 
-char* read_file(char* name_file,size_t* size_ptr){
-    FILE* file=fopen(name_file,"rb");
+#define DIR_STATIC "static"
+#define ROOT_PATH_FILE "/index.html"
+
+char* read_file(char* path,size_t* ptr_len){
+    FILE* file=fopen(path,"rb");
+    char* content=NULL;
     if(file==NULL) return NULL;
-
-    fseek(file,0,SEEK_END);
-    long size=ftell(file);
-    if(size<0) goto error;
+    // get length file
+    if(fseek(file,0,SEEK_END)<0) goto clean;
+    off_t len=ftello(file);
+    if(len<0) goto clean;
     rewind(file);
-    char* buffer=malloc((size_t)size);
-    if(buffer==NULL) goto error;
+    // read all file
+    content=xalloc(sizeof(char),(size_t)len,NULL);
+    size_t bloc=fread(content,(size_t)len,1,file);
+    if (bloc!=1) goto clean;
 
-    *size_ptr=fread(buffer,sizeof(char),(size_t)size,file);
-    
+    *ptr_len=(size_t)len;
     fclose(file);
-    return buffer;
-    error:
-     fclose(file);
-     return NULL;
+    return content;
+
+    clean:
+        fclose(file);
+        free(content);
+        return NULL;  
+   
 }
-int send_data(int clientfd,char* buffer,size_t size){
-    while(size!=0){
-        ssize_t octets_send=send(clientfd,buffer,size,0);
-        if(octets_send<0) return -1;
-        buffer+=octets_send;
-        size-=octets_send;
+char* ext_to_MIME(char* file_path){
+    char* ext=strrchr(file_path,'.');
+    if(ext==NULL) return "text/plain";
+    if(strcmp(ext,".html")==0) return "text/html";
+    if(strcmp(ext,".css")==0) return "text/css";
+    if(strcmp(ext,".js")==0) return "text/javascript";
+    if(strcmp(ext,".png")==0) return "image/png";
+    if(strcmp(ext,".jpeg")==0) return "image/jpeg";
+    if(strcmp(ext,".jpg")==0) return "image/jpg";
+    if(strcmp(ext,".webp")==0) return "image/webp";
+    if(strcmp(ext,".ttf")==0) return "font/ttf";
+    
+    return "text/plain";
+}
+char* strjoin(char* first,char* second){
+    char* result=xalloc(sizeof(char),strlen(first)+strlen(second)+1,NULL);
+    strcpy(result,first);
+    strcat(result,second);
+    return result;
+}
+http_response_t* directory_mapping(char* ip,in_port_t port,http_request_t* req){
+    // if the path is /, serve the default file
+    char* path= strcmp(req->url,"/")==0 ? strjoin(DIR_STATIC,ROOT_PATH_FILE) :strjoin(DIR_STATIC,req->url);
+    size_t len;
+    char* content=read_file(path,&len);
+    printf("%s:%i  => %s \n",ip,port,path);
+    http_response_t* res=RESPONSE_create();
+    if(content==NULL){
+        // file not found 
+        char* error=strjoin("404 not found : ",req->url);
+        res->status_code=404;
+        res->content=error;
+        res->content_length=strlen(error);
+        res->content_type=strdup("text/plain");
+        free(content);
+    }else{
+        // file found
+        res->status_code=200;
+        res->content=content;
+        res->content_length=len;
+        res->content_type=strdup(ext_to_MIME(path));
     }
-    return 0;
+    free(path);
+    return res;
 }
 
 int main(){
-    int serverfd=socket(AF_INET,SOCK_STREAM,0);
-    if(serverfd==-1){
-        perror("Socket creation error");
-        exit(EXIT_FAILURE);
+    printf("http://%s:%i\n",IP,PORT);
+    switch(HTTP_SERVER_loop(IP,PORT,10,&directory_mapping)){
+        case SERVER_SYS_ERR:
+            perror("sys server");
+            return -1;
+        case SERVER_IP_ERR:
+            fprintf(stderr,"ip format error\n");
+            return -1;
     }
-    int opt=1;
-    if(setsockopt(serverfd,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt))<0){
-        perror("Setsockopt server error");
-        exit(EXIT_FAILURE);
-    }
-    struct sockaddr_in adress;
-    adress.sin_family=AF_INET;
-    adress.sin_addr.s_addr=INADDR_ANY;
-    adress.sin_port=htons(PORT);
-
-    if(bind(serverfd,(struct sockaddr*)&adress,sizeof(adress))<0){
-        perror("Bind server error");
-        exit(EXIT_FAILURE);
-    }
-    if(listen(serverfd,5)<0){
-        perror("Listen server error");
-        exit(EXIT_FAILURE);
-    }
-    struct sockaddr_in client_addr;
-    socklen_t addr_len=sizeof(client_addr);
-    size_t size;
-    int len_str_size;
-    char size_str[LENGTH_MAX_NUMBER_DIGIT+1];
-    printf("http://localhost:%i\n",PORT);
-    while(1){
-        int clientfd=accept(serverfd,(struct sockaddr*)&client_addr,&addr_len);
-        if(clientfd==-1){
-            perror("Accept server error");
-            exit(EXIT_FAILURE);
-        }
-        char* content=read_file("index.html",&size);
-        if(content==NULL) goto close_client;
-        len_str_size=snprintf(size_str,LENGTH_MAX_NUMBER_DIGIT+1,"%lu",size);
-        if(len_str_size>LENGTH_MAX_NUMBER_DIGIT){
-            fprintf(stderr,"length file too large for LENGTH_MAX_NUMBER_DIGIT\n");
-            exit(EXIT_FAILURE);
-        }
-        if(send_data(clientfd,request_start_line,strlen(request_start_line))<0) goto free_client;
-        if(send_data(clientfd,request_headers,strlen(request_headers))<0) goto free_client;
-        if(send_data(clientfd,size_str,(size_t)len_str_size)<0) goto free_client;
-        if(send_data(clientfd,request_marker_body,strlen(request_marker_body))<0) goto free_client;
-        if(send_data(clientfd,content,size)<0) goto free_client;
-        free_client:
-            free(content);
-        close_client:
-            close(clientfd);
-    }
-    close(serverfd);
+    return 0;
 }

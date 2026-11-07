@@ -1,1 +1,4 @@
+build/bin/*.exe
+build/obj/*/*.o
+build/lib/*.a
 *.exe

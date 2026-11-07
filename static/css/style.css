@@ -1,0 +1,45 @@
+@font-face{
+    font-family: "Tiny5Duo";
+    src : url("/font/Tiny5Duo.ttf");
+}
+
+body {
+    background-color:white;
+}
+h1{
+    color : black;  
+    font-family: "Tiny5Duo";
+    font-size: 50px;
+}
+a{
+    color : brown;
+}
+p{
+    color : black;
+    font-family: "Tiny5Duo";
+    font-size: 40px;
+}
+
+
+.box{
+    padding: 3vw;
+    width: max-content;
+    height: max-content;
+    margin : 50px auto ;
+    border: 10px solid black;
+    border-radius: 10px;
+    transition: 0.5s;
+}
+.box:hover{
+    padding: 5vw;
+    transition: 0.5s;
+}
+.box p{
+    width: max-content;
+    margin :auto;
+}
+.box img{
+ margin: auto;
+ height: auto;
+ width: 22vw;
+}
