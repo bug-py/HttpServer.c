@@ -56,7 +56,7 @@ int RESPONSE_build(http_response_t* response,buffer_t* buffer){
     // Content-Length header
     if(BUFFER_append_str(buffer,"Content-Length: ")<0) return -1;
     // Number size_t => str
-    char str_content_length[LEN_STR_MAX_LENGTH];
+    char str_content_length[CONTENT_LENGTH_STR_MAX];
     int len_write=snprintf(str_content_length,CONTENT_LENGTH_STR_MAX,"%lu",response->content_length);
     if(len_write<0 || len_write+1>CONTENT_LENGTH_STR_MAX) return -1;
     if(BUFFER_append_str(buffer,str_content_length)<0) return -1;
